@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>わたしのオーディブル</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --card: #ffffff;
+    --text: #23241f;
+    --muted: #63665b;
+    --accent: #4f6b3a;
+    --accent-text: #ffffff;
+    --line: #dcdccf;
+    --now: #e6ecdc;
+    --error: #a33a2a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171914;
+      --card: #22251e;
+      --text: #eef0e6;
+      --muted: #aeb2a3;
+      --accent: #9cc27a;
+      --accent-text: #171914;
+      --line: #363a2f;
+      --now: #2e3826;
+      --error: #f08b78;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 19px;
+    line-height: 1.6;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 22px; margin: 8px 0 16px; text-align: center; letter-spacing: 0.05em; }
+  [hidden] { display: none !important; }
+
+  .lock {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 24px 16px; text-align: center; margin-top: 24px;
+  }
+  .lock p { margin: 0 0 16px; color: var(--muted); }
+  .lock input {
+    font: inherit; width: 100%; max-width: 320px; padding: 12px 14px;
+    border: 2px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text);
+  }
+  .lock button { margin-top: 12px; min-width: 160px; background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .lock .error { color: var(--error); min-height: 1.6em; margin: 8px 0 0; }
+
+  .player {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px 16px; text-align: center;
+  }
+  .now-program { color: var(--muted); font-size: 17px; }
+  .now-title { font-size: 22px; font-weight: bold; margin: 4px 0 12px; }
+  .time { color: var(--muted); font-size: 17px; font-variant-numeric: tabular-nums; }
+  .progress { width: 100%; height: 32px; margin: 8px 0; accent-color: var(--accent); }
+
+  .controls { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 8px 0 4px; }
+  button {
+    font: inherit; color: var(--text); background: var(--card);
+    border: 2px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; min-height: 56px; cursor: pointer;
+  }
+  .play {
+    width: 104px; height: 104px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-text); border: none;
+    font-size: 22px; font-weight: bold;
+  }
+  .small { font-size: 16px; min-width: 76px; }
+
+  .options { margin-top: 16px; display: grid; gap: 10px; }
+  .row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .row-label { color: var(--muted); font-size: 16px; width: 100%; }
+  .row button { font-size: 17px; min-width: 72px; }
+  .row button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .sleep-status { color: var(--muted); font-size: 16px; min-height: 1.6em; }
+
+  .list { margin-top: 28px; }
+  .program-title { font-size: 21px; margin: 24px 0 4px; }
+  .program-sub { color: var(--muted); font-size: 16px; margin: 0 0 8px; }
+  .chapter-title { font-size: 18px; margin: 16px 0 6px; color: var(--muted); }
+  .block {
+    display: flex; justify-content: space-between; gap: 12px; width: 100%;
+    text-align: left; margin: 6px 0; padding: 14px 16px; font-size: 18px;
+  }
+  .block .len { color: var(--muted); white-space: nowrap; }
+  .block.current { background: var(--now); border-color: var(--accent); }
+  .msg { text-align: center; color: var(--muted); }
+  .footer { margin-top: 32px; text-align: center; }
+  .footer button { font-size: 15px; min-height: 44px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>わたしのオーディブル</h1>
+
+  <section class="lock" id="lock" hidden aria-label="合言葉">
+    <form id="lockForm">
+      <p>合言葉を入れてください。<br>この端末では、次から入れなくても開けます。</p>
+      <input id="pass" type="password" autocomplete="current-password" aria-label="合言葉" required>
+      <div><button type="submit" id="unlockBtn">開く</button></div>
+      <p class="error" id="lockError"></p>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <section class="player" aria-label="再生">
+      <div class="now-program" id="nowProgram">　</div>
+      <div class="now-title" id="nowTitle">読み込み中…</div>
+      <input class="progress" id="progress" type="range" min="0" max="100" value="0" step="1" aria-label="再生位置">
+      <div class="time"><span id="cur">0:00</span> / <span id="dur">0:00</span></div>
+      <div class="controls">
+        <button class="small" id="back" aria-label="15秒もどる">15秒<br>もどる</button>
+        <button class="play" id="play" aria-label="再生">再生</button>
+        <button class="small" id="next" aria-label="次へ">次へ</button>
+      </div>
+
+      <div class="options">
+        <div class="row" id="speedRow">
+          <span class="row-label">読む速さ</span>
+          <button data-rate="0.9">ゆっくり</button>
+          <button data-rate="1">ふつう</button>
+          <button data-rate="1.2">はやめ</button>
+          <button data-rate="1.5">1.5倍</button>
+        </div>
+        <div class="row" id="sleepRow">
+          <span class="row-label">タイマー</span>
+          <button data-min="30">30分</button>
+          <button data-min="60">60分</button>
+          <button data-min="0">なし</button>
+        </div>
+        <div class="sleep-status" id="sleepStatus"></div>
+      </div>
+    </section>
+
+    <section class="list" id="list" aria-label="番組の一覧"></section>
+    <div class="footer"><button id="forget">この端末の合言葉を消す</button></div>
+  </div>
+  <audio id="audio" preload="none"></audio>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var audio = $('audio'), playBtn = $('play'), progress = $('progress');
+  var curEl = $('cur'), durEl = $('dur'), listEl = $('list');
+  var nowProgram = $('nowProgram'), nowTitle = $('nowTitle'), sleepStatus = $('sleepStatus');
+
+  var STATE_KEY = 'my-audible-v1';
+  var KEY_KEY = 'my-audible-key';
+  var meta = null, cryptoKey = null;
+  var tracks = [], index = 0, pendingSeek = 0, seeking = false;
+  var cache = {};           // index → 復号済みの blob URL
+  var unlocked = false;     // iPhone で、最初のタップのうちに音声要素を使えるようにしたか
+  var sleepTimer = null, sleepEnd = 0, sleepTick = null;
+
+  // ---- 保存(この端末だけ) ----
+  function getItem(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function setItem(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function removeItem(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function load() { try { return JSON.parse(getItem(STATE_KEY)) || {}; } catch (e) { return {}; } }
+  function save(patch) { var s = load(); for (var k in patch) s[k] = patch[k]; setItem(STATE_KEY, JSON.stringify(s)); }
+
+  // ---- 暗号(Web Crypto) ----
+  function b64ToBytes(b64) { var s = atob(b64), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  function bytesToB64(buf) { var a = new Uint8Array(buf), s = ''; for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
+  function decrypt(key, bytes) {
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.subarray(0, 12) }, key, bytes.subarray(12));
+  }
+  function importRaw(raw) {
+    return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, true, ['decrypt']);
+  }
+  function deriveKey(pass) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', hash: 'SHA-256', salt: b64ToBytes(meta.salt), iterations: meta.iterations },
+          base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+      });
+  }
+  function verify(key) {
+    return decrypt(key, b64ToBytes(meta.check)).then(function () { return true; }, function () { return false; });
+  }
+
+  // ---- 合言葉の画面 ----
+  $('lockForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('unlockBtn');
+    btn.disabled = true; $('lockError').textContent = '確認しています…';
+    deriveKey($('pass').value).then(function (key) {
+      return verify(key).then(function (ok) {
+        if (!ok) { $('lockError').textContent = '合言葉が違います'; btn.disabled = false; return; }
+        return crypto.subtle.exportKey('raw', key).then(function (raw) {
+          setItem(KEY_KEY, bytesToB64(raw));
+          cryptoKey = key; $('pass').value = '';
+          openApp();
+        });
+      });
+    }).catch(function () { $('lockError').textContent = 'この端末では開けませんでした'; btn.disabled = false; });
+  });
+  $('forget').addEventListener('click', function () {
+    removeItem(KEY_KEY); location.reload();
+  });
+
+  // ---- 表示 ----
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+  }
+  function fmtLen(sec) { return sec ? Math.max(1, Math.round(sec / 60)) + '分' : ''; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function render(data) {
+    var html = '';
+    tracks = [];
+    data.programs.forEach(function (p) {
+      html += '<h2 class="program-title">' + esc(p.title) + '</h2>';
+      if (p.subtitle) html += '<p class="program-sub">' + esc(p.subtitle) + '</p>';
+      p.chapters.forEach(function (c) {
+        html += '<h3 class="chapter-title">' + esc(c.title) + '</h3>';
+        c.blocks.forEach(function (b, bi) {
+          var i = tracks.length;
+          tracks.push({ program: p.title, chapter: c.title, title: b.title, src: b.src, duration: b.duration });
+          html += '<button class="block" data-i="' + i + '"><span>' + (bi + 1) + '. ' + esc(b.title) +
+                  '</span><span class="len">' + fmtLen(b.duration) + '</span></button>';
+        });
+      });
+    });
+    listEl.innerHTML = html || '<p class="msg">まだ番組がありません</p>';
+  }
+
+  // ---- 音声の準備(取得して復号) ----
+  function prepare(i) {
+    if (cache[i]) return cache[i];
+    var t = tracks[i];
+    cache[i] = fetch(t.src).then(function (r) {
+      if (!r.ok) throw new Error('fetch');
+      return r.arrayBuffer();
+    }).then(function (buf) {
+      return decrypt(cryptoKey, new Uint8Array(buf));
+    }).then(function (plain) {
+      return URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
+    });
+    cache[i].catch(function () { delete cache[i]; });
+    return cache[i];
+  }
+  function dropCache(keep) {
+    Object.keys(cache).forEach(function (k) {
+      if (keep.indexOf(Number(k)) < 0) {
+        cache[k].then(function (u) { URL.revokeObjectURL(u); }, function () {});
+        delete cache[k];
+      }
+    });
+  }
+
+  // iPhone は、タップした直後にしか音を出し始められない。
+  // 最初のタップで無音を鳴らしておくと、そのあと復号を待ってから再生してもよくなる。
+  var SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  function unlockSync() {
+    if (unlocked) return;
+    unlocked = true;
+    audio.src = SILENT;
+    var p = audio.play(); if (p && p.catch) p.catch(function () {});
+  }
+
+  function showTrack(i, startAt) {
+    var t = tracks[i];
+    nowProgram.textContent = t.program + '　' + t.chapter;
+    nowTitle.textContent = t.title;
+    durEl.textContent = fmt(t.duration);
+    curEl.textContent = fmt(startAt);
+    progress.max = Math.round(t.duration || 100);
+    progress.value = startAt;
+    document.querySelectorAll('.block').forEach(function (b) {
+      b.classList.toggle('current', Number(b.dataset.i) === i);
+    });
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.program, album: t.chapter });
+    }
+  }
+
+  var loadingFor = -1;
+  function select(i, startAt, autoplay) {
+    index = Math.min(Math.max(i, 0), tracks.length - 1);
+    pendingSeek = startAt || 0;
+    showTrack(index, pendingSeek);
+    save({ index: index, time: pendingSeek });
+    var my = index; loadingFor = my;
+    if (autoplay) nowTitle.textContent = tracks[my].title + '(準備中…)';
+    return prepare(my).then(function (url) {
+      if (loadingFor !== my) return;
+      nowTitle.textContent = tracks[my].title;
+      audio.src = url;
+      applyRate();
+      dropCache([my, my + 1]);
+      if (autoplay) return audio.play();
+    }).catch(function () {
+      if (loadingFor === my) nowTitle.textContent = '音声を読み込めませんでした';
+    });
+  }
+  function playIndex(i, startAt) { unlockSync(); select(i, startAt, true); }
+
+  audio.addEventListener('loadedmetadata', function () {
+    if (audio.src === SILENT) return;
+    if (pendingSeek) { audio.currentTime = pendingSeek; pendingSeek = 0; }
+    progress.max = Math.round(audio.duration);
+    durEl.textContent = fmt(audio.duration);
+    applyRate();
+  });
+  var lastSave = 0;
+  audio.addEventListener('timeupdate', function () {
+    if (audio.src === SILENT) return;
+    if (!seeking) progress.value = audio.currentTime;
+    curEl.textContent = fmt(audio.currentTime);
+    var now = Date.now();
+    if (now - lastSave > 5000) { lastSave = now; save({ index: index, time: audio.currentTime }); }
+  });
+  audio.addEventListener('playing', function () {
+    if (audio.src === SILENT) return;
+    playBtn.textContent = '一時停止'; playBtn.setAttribute('aria-label', '一時停止');
+    if (index < tracks.length - 1) prepare(index + 1);   // 次を先に用意しておく(画面ロック中でも続けて流れるように)
+  });
+  audio.addEventListener('pause', function () {
+    if (audio.src === SILENT) return;
+    playBtn.textContent = '再生'; playBtn.setAttribute('aria-label', '再生');
+    save({ index: index, time: audio.currentTime });
+  });
+  audio.addEventListener('ended', function () {
+    if (audio.src === SILENT) return;
+    if (index < tracks.length - 1) select(index + 1, 0, true);
+    else { save({ index: 0, time: 0 }); nowTitle.textContent = 'おしまい'; }
+  });
+
+  playBtn.addEventListener('click', function () {
+    if (!audio.src || audio.src === SILENT) { playIndex(index, pendingSeek); return; }
+    if (audio.paused) audio.play(); else audio.pause();
+  });
+  $('back').addEventListener('click', function () { audio.currentTime = Math.max(0, audio.currentTime - 15); });
+  $('next').addEventListener('click', function () { if (index < tracks.length - 1) playIndex(index + 1, 0); });
+  listEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.block'); if (!btn) return;
+    playIndex(Number(btn.dataset.i), 0);
+  });
+  progress.addEventListener('input', function () { seeking = true; curEl.textContent = fmt(progress.value); });
+  progress.addEventListener('change', function () {
+    seeking = false;
+    if (audio.readyState > 0 && audio.src !== SILENT) audio.currentTime = Number(progress.value);
+    else pendingSeek = Number(progress.value);
+  });
+
+  // 読む速さ
+  var rate = Number(load().rate) || 1;
+  function applyRate() {
+    audio.defaultPlaybackRate = rate; audio.playbackRate = rate;
+    document.querySelectorAll('#speedRow button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.rate) === rate));
+    });
+  }
+  $('speedRow').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    rate = Number(b.dataset.rate); save({ rate: rate }); applyRate();
+  });
+
+  // タイマー
+  function setSleep(min) {
+    clearTimeout(sleepTimer); clearInterval(sleepTick); sleepTimer = sleepTick = null;
+    document.querySelectorAll('#sleepRow button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.min) === min && min > 0));
+    });
+    if (!min) { sleepStatus.textContent = ''; return; }
+    sleepEnd = Date.now() + min * 60000;
+    sleepTimer = setTimeout(function () { audio.pause(); setSleep(0); sleepStatus.textContent = '止めました'; }, min * 60000);
+    var show = function () { sleepStatus.textContent = 'あと ' + Math.ceil((sleepEnd - Date.now()) / 60000) + '分で止まります'; };
+    show(); sleepTick = setInterval(show, 30000);
+  }
+  $('sleepRow').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    setSleep(Number(b.dataset.min));
+  });
+
+  // ロック画面からの操作
+  if ('mediaSession' in navigator) {
+    var ms = navigator.mediaSession;
+    var on = function (a, fn) { try { ms.setActionHandler(a, fn); } catch (e) {} };
+    on('play', function () { audio.play(); });
+    on('pause', function () { audio.pause(); });
+    on('seekbackward', function () { audio.currentTime = Math.max(0, audio.currentTime - 15); });
+    on('seekforward', function () { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 15); });
+    on('previoustrack', function () { if (index > 0) select(index - 1, 0, true); });
+    on('nexttrack', function () { if (index < tracks.length - 1) select(index + 1, 0, true); });
+  }
+
+  // ---- 起動 ----
+  function openApp() {
+    $('lock').hidden = true; $('app').hidden = false;
+    fetch('episodes.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (data) {
+      render(data);
+      if (!tracks.length) { nowTitle.textContent = 'まだ番組がありません'; return; }
+      var s = load();
+      var i = (typeof s.index === 'number' && s.index < tracks.length) ? s.index : 0;
+      select(i, s.time || 0, false);
+      applyRate();
+    }).catch(function () {
+      nowTitle.textContent = '番組を読み込めませんでした';
+    });
+  }
+  function showLock() { $('lock').hidden = false; $('app').hidden = true; }
+
+  fetch('crypto.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (m) {
+    meta = m;
+    var saved = getItem(KEY_KEY);
+    if (!saved) { showLock(); return; }
+    importRaw(b64ToBytes(saved)).then(function (key) {
+      return verify(key).then(function (ok) {
+        if (ok) { cryptoKey = key; openApp(); } else { removeItem(KEY_KEY); showLock(); }
+      });
+    }).catch(function () { removeItem(KEY_KEY); showLock(); });
+  }).catch(function () {
+    $('lock').hidden = false;
+    $('lockError').textContent = '準備中です。少し時間をおいて開きなおしてください';
+  });
+})();
+</script>
+</body>
+</html>

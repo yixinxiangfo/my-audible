@@ -1,0 +1,28 @@
+{
+  "programs": [
+    {
+      "id": "hokkukyo",
+      "title": "法句経",
+      "subtitle": "書き下し・意味・ことばの順に読む",
+      "chapters": [
+        {
+          "title": "第一章 無常品",
+          "blocks": [
+            {
+              "id": "01-01",
+              "title": "無常品 その一(序〜十)",
+              "src": "audio/hokkukyo/01-01.bin",
+              "duration": 581
+            },
+            {
+              "id": "01-02",
+              "title": "無常品 その二(十一〜二十一)",
+              "src": "audio/hokkukyo/01-02.bin",
+              "duration": 552
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

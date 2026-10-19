@@ -1,0 +1,9 @@
+.env*
+node_modules/
+.DS_Store
+
+# 本の文章を含むものは公開しない(この Mac の中だけに置く)
+scripts/
+work/
+tts/usage_log.jsonl
+scans/

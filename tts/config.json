@@ -1,0 +1,14 @@
+{
+  "model": "gemini-3.8-flash-tts",
+  "voice": "Gacrux",
+  "style": "落ち着いた大人の女性の声で、ラジオの朗読番組のように、やさしく、ゆっくり読んでください。お経の言葉の部分は、少しだけ声をひそめ、ひとこと ひとこと味わうように読んでください。",
+  "free_tier": true,
+  "price_usd_per_1m": {
+    "input_text": 0.5,
+    "output_audio": 9.0
+  },
+  "usd_jpy": 160,
+  "budget_jpy": 800,
+  "chars_per_minute": 300,
+  "mp3_bitrate": "64k"
+}
