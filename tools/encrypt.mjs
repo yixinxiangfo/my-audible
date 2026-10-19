@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // work/ の MP3(暗号化前)を暗号化して audio/ に置き、episodes.json に再生時間を書き込む。
-// 使い方: node tools/encrypt.mjs
+// 使い方: node tools/encrypt.mjs           (新しい音声だけ暗号化)
+//         node tools/encrypt.mjs --rekey   (合言葉を変えたあと。crypto.json と全部の音声を作り直す)
 // - 合言葉は ~/.config/my-audible/passphrase から読む(画面には出さない)
 // - 暗号: PBKDF2-SHA256 で鍵を作り、AES-256-GCM。ファイルは「IV(12バイト)+暗号文+タグ」
 //   ブラウザの Web Crypto でそのまま復号できる形にしてある
@@ -17,6 +18,7 @@ const CRYPTO_JSON = join(ROOT, "crypto.json");
 const EPISODES_JSON = join(ROOT, "episodes.json");
 const ITERATIONS = 600000;
 const CHECK_TEXT = "my-audible-ok";
+const REKEY = process.argv.includes("--rekey");
 
 if (!existsSync(PASS_FILE)) {
   console.log("合言葉がまだ設定されていません。先に node tools/set-passphrase.mjs を実行してください。");
@@ -39,7 +41,7 @@ function decrypt(key, buf) {
 
 // 鍵の材料(salt)と、合言葉が合っているかを確かめるための暗号文を用意する
 let meta;
-if (existsSync(CRYPTO_JSON)) {
+if (existsSync(CRYPTO_JSON) && !REKEY) {
   meta = JSON.parse(readFileSync(CRYPTO_JSON, "utf8"));
 } else {
   const salt = randomBytes(16);
@@ -55,6 +57,7 @@ try {
   if (decrypt(key, Buffer.from(meta.check, "base64")).toString() !== CHECK_TEXT) throw new Error();
 } catch {
   console.log("合言葉が、前に暗号化したときのものと違います。止めます。");
+  console.log("合言葉を変えたのなら、node tools/encrypt.mjs --rekey で作り直してください。");
   process.exit(1);
 }
 
@@ -72,7 +75,7 @@ for (const show of episodes.programs) {
       const enc = join(ROOT, b.src);
       if (!existsSync(plain)) { missing++; continue; }
       b.duration = durationSec(plain);
-      if (existsSync(enc) && statSync(enc).mtimeMs > statSync(plain).mtimeMs) { skipped++; continue; }
+      if (!REKEY && existsSync(enc) && statSync(enc).mtimeMs > statSync(plain).mtimeMs) { skipped++; continue; }
       mkdirSync(dirname(enc), { recursive: true });
       writeFileSync(enc, encrypt(key, readFileSync(plain)));
       console.log("暗号化: " + b.src);

@@ -2,6 +2,6 @@
   "v": 1,
   "kdf": "PBKDF2-SHA256",
   "iterations": 600000,
-  "salt": "uD3OWCrhM18nCxJgDVTTHQ==",
-  "check": "Hefasuqa6bga937O7Ga1ytbgqHX8QX7VVviXsAT/dqyS0//L+2tu4YI="
+  "salt": "d5XWkBpb0I029nK6SEVTQw==",
+  "check": "aUaQYVGlvA+s6wAwNymwUIHEOFL1GcZHYAW2D48YP2NdnCjs8R6rJEs="
 }
