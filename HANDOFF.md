@@ -8,7 +8,7 @@
 - 新しい台本(scripts/hokkukyo/v3/):書き下しを本のふりがなどおりに、訳は本の現代語訳のまま。睡眠は「ずいめん」。
   **音声はまだ作っていない**
 - Gemini TTS:2026-10-19 に前払いの残高が尽きて 402 で止まった。無料枠(月約3時間)が戻るのは来月(Gemini の回答)
-- スキャンは rclone で取得(読み取り専用)、ページの画像を Read で見る。poppler は brew で導入済み
+- スキャンは Mac の Google ドライブ同期フォルダ(~/Library/CloudStorage/GoogleDrive-…/マイドライブ/本スキャン/)から直接読む。予備に rclone。ページの画像を Read で見る(poppler は brew で導入済み)
 - Cloud TTS 用のプロジェクト my-audible-tts とキー(.env の GOOGLE_TTS_API_KEY)は作ったが使わない(AI っぽかった)
 
 ## 決めたこと

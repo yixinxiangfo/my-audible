@@ -19,11 +19,13 @@
 ## スキャンの読み方(重要)
 - 本のスキャンは Google Drive の `本スキャン/<本の名前>/` にある
 - **Drive の道具(read_file_content)の文字だけで台本を作らない**。ふりがなの位置が崩れて、本の読みが分からなくなる
-- rclone で Mac にダウンロードし、**ページの画像を見て**ふりがなを読み取る
-  - `rclone copy "gdrive:本スキャン/<本の名前>/" scans/<本の名前>/`(読み取り専用の設定。scans/ は公開しない)
-  - PDF のページ画像は Read ツールの pages 指定で見る(poppler が必要。brew で導入済み)
-  - rclone は共有の client_id を使っている。公式によれば 2026年中に使えなくなる。使えなくなったら User に報告する
-- Mac の Google ドライブ同期フォルダ(~/Library/CloudStorage/)は、Claude Code からもターミナルからも読めなかった(2026-10-20)。使わない
+- **ページの画像を見て**ふりがなを読み取る。PDF のページ画像は Read ツールの pages 指定で見る(poppler が必要。brew で導入済み)
+- PDF の取り出し方
+  - **基本:Mac の Google ドライブ同期フォルダから直接読む**
+    `~/Library/CloudStorage/GoogleDrive-yixinxiangfo34@yahoo.co.jp/マイドライブ/本スキャン/<本の名前>/`
+    (2026-10-20、Mac 側で Google ドライブが有効になっていなかったのが原因で読めなかった。有効にしたら読めた)
+  - 予備:rclone(読み取り専用)。`rclone copy "gdrive:本スキャン/<本の名前>/" scans/<本の名前>/`
+    rclone は共有の client_id を使っていて、公式によれば 2026年中に使えなくなる
 
 ## 台本の書き方
 - 「本に忠実に」が基本。本の訳・解説を使い、Claude が勝手に訳を創作しない
