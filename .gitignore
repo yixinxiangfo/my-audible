@@ -7,3 +7,4 @@ scripts/
 work/
 tts/usage_log.jsonl
 scans/
+tts/error_log.jsonl

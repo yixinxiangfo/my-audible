@@ -73,7 +73,12 @@ def request_tts(text, voice, retries=5):
                 return json.loads(r.read())
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
             wait = 10 * 2 ** attempt
-            print(f"  失敗 ({getattr(e, 'code', e)})、{wait}秒待って再試行", file=sys.stderr)
+            code = getattr(e, 'code', e)
+            print(f"  失敗 ({code})、{wait}秒待って再試行", file=sys.stderr)
+            with (ROOT / "error_log.jsonl").open("a") as f:
+                f.write(json.dumps({"time": time.strftime("%Y-%m-%d %H:%M:%S"), "code": str(code)}) + "\n")
+            if code in (402, 403):
+                sys.exit(f"エラー {code}: 無料枠の上限か、支払いの設定が原因の可能性。再試行しても通らないので止めます")
             time.sleep(wait)
     sys.exit("再試行の上限に達しました")
 
@@ -124,7 +129,7 @@ def main():
     paid_equiv = cost_jpy(usage)
     c = 0.0 if CONFIG.get("free_tier") else paid_equiv
     with USAGE_LOG.open("a") as f:
-        f.write(json.dumps({"out": str(out), "voice": args.voice, "model": CONFIG["model"],
+        f.write(json.dumps({"time": time.strftime("%Y-%m-%d %H:%M:%S"), "out": str(out), "voice": args.voice, "model": CONFIG["model"],
                             "input_tokens": usage.get("total_input_tokens"),
                             "output_tokens": usage.get("total_output_tokens"),
                             "cost_jpy": round(c, 3),
@@ -132,7 +137,11 @@ def main():
 
     dur = duration_sec(out)
     expected = len(text) / CONFIG["chars_per_minute"] * 60
-    flag = "  ※短すぎる：途中で切れている可能性" if dur < expected * 0.6 else ""
+    flag = ""
+    if dur < expected * 0.6:
+        flag = "  ※短すぎる：途中で切れている可能性"
+    elif dur > expected * 1.12:
+        flag = "  ※長すぎる：同じところを繰り返し読んでいる可能性。聴いて確かめる"
     print(f"  完了 {dur:.1f}秒（目安 {expected:.0f}秒）約{c:.2f}円 / 累計 約{spent_jpy():.1f}円{flag}")
 
 
